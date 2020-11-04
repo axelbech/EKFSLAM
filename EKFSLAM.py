@@ -69,7 +69,7 @@ class EKFSLAM:
         """
         Fx = np.array([[1, 0, -u[0]*np.sin(x[2])-u[1]*np.cos(x[2])],
                        [0, 1, u[0]*np.cos(x[2])-u[1]*np.sin(x[2])],
-                       [0, 0, 1]]# TODO, eq (11.13)
+                       [0, 0, 1]])# TODO, eq (11.13)
         
 
         assert Fx.shape == (3, 3), "EKFSLAM.Fx: wrong shape"
@@ -138,9 +138,9 @@ class EKFSLAM:
         # cov matrix layout:
         # [[P_xx, P_xm],
         # [P_mx, P_mm]]
-        P[:3, :3] = Fx @ Fx @ P[:3, :3]  # TODO robot cov prediction
+        P[:3, :3] = Fx @ P[:3, :3] @ Fx.T  # TODO robot cov prediction
         P[:3, 3:] = Fx @ P[:3, 3:] # TODO robot-map covariance prediction
-        P[3:, :3] = Fx @ P[3:, :3] # TODO map-robot covariance: transpose of the above
+        P[3:, :3] = P[:3, 3:].T # TODO map-robot covariance: transpose of the above
 
         assert np.allclose(P, P.T), "EKFSLAM.predict: not symmetric P"
         assert np.all(
@@ -173,7 +173,7 @@ class EKFSLAM:
 
         # None as index ads an axis with size 1 at that position.
         # Numpy broadcasts size 1 dimensions to any size when needed
-        delta_m = # TODO, relative position of landmark to sensor on robot in world frame
+        delta_m = m - x[None, 0:2] - rotmat2d([x[2])*self.sensor_offset # TODO, relative position of landmark to sensor on robot in world frame
 
         zpredcart = # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
 
