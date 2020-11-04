@@ -297,21 +297,21 @@ class EKFSLAM:
             inds = slice(ind, ind + 2)
             zj = z[inds]
 
-            rot = # TODO, rotmat in Gz
-            lmnew[inds] = # TODO, calculate position of new landmark in world frame
+            rot = rotmat2d(zj[1] + eta[2]) # TODO, rotmat in Gz
+            lmnew[inds] = rotmat2d(eta[2]) @ np.array([zj[0]*np.cos(zj[1]), zj[0]*np.sin(zj[0])] + sensor_offset_world # TODO, calculate position of new landmark in world frame
 
-            Gx[inds, :2] = # TODO
-            Gx[inds, 2] = # TODO
+            Gx[inds, :2] = I2 # TODO
+            Gx[inds, 2] = zj[0]*[-np.sin(zj[1]+eta[2]), np.cos(zj[1]+eta[2])] + sensor_offset_world_der # TODO
 
-            Gz = # TODO
+            Gz = rot @ np.diag([1, zj[0]]) # TODO
 
             Rall[inds, inds] = # TODO, Gz * R * Gz^T, transform measurement covariance from polar to cartesian coordinates
 
         assert len(lmnew) % 2 == 0, "SLAM.add_landmark: lmnew not even length"
         etaadded = # TODO, append new landmarks to state vector
-        Padded = # TODO, block diagonal of P_new, see problem text in 1g) in graded assignment 3
-        Padded[n:, :n] = # TODO, top right corner of P_new
-        Padded[:n, n:] = # TODO, transpose of above. Should yield the same as calcualion, but this enforces symmetry and should be cheaper
+        Padded = la.block_diag(P, Gx@P[:3,:3]@Gx.T + la.block_diag(Gz@self.R@Gz.T)) # TODO, block diagonal of P_new, see problem text in 1g) in graded assignment 3
+        Padded[n:, :n] = P[:, :3] @ Gx.T# TODO, top right corner of P_new
+        Padded[:n, n:] = Padded[n:, :n].T # TODO, transpose of above. Should yield the same as calcualion, but this enforces symmetry and should be cheaper
 
         assert (
             etaadded.shape * 2 == Padded.shape
