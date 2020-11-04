@@ -138,7 +138,7 @@ class EKFSLAM:
         # cov matrix layout:
         # [[P_xx, P_xm],
         # [P_mx, P_mm]]
-        P[:3, :3] = Fx @ P[:3, :3] @ Fx.T  # TODO robot cov prediction
+        P[:3, :3] = Fx @ P[:3, :3] @ Fx.T + self.Q  # TODO robot cov prediction
         P[:3, 3:] = Fx @ P[:3, 3:] # TODO robot-map covariance prediction
         P[3:, :3] = P[:3, 3:].T # TODO map-robot covariance: transpose of the above
 
@@ -169,17 +169,18 @@ class EKFSLAM:
         ## reshape map (2, #landmarks), m[:, j] is the jth landmark
         m = eta[3:].reshape((-1, 2)).T
 
-        Rot = rotmat2d(-x[2])
+        Rot = rotmat2d(-x[2]) # From world frame to body frame
 
         # None as index ads an axis with size 1 at that position.
         # Numpy broadcasts size 1 dimensions to any size when needed
-        delta_m = m - x[None, 0:2] - rotmat2d([x[2])*self.sensor_offset # TODO, relative position of landmark to sensor on robot in world frame
+        offset_correction = rotmat2d(x[2]) @ self.sensor_offset # Offset in world frame
+        delta_m = m - x[0:2, None] - offset_correction[:,None] # TODO, relative position of landmark to sensor on robot in world frame
 
-        zpredcart = # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
+        zpredcart = Rot @ delta_m # TODO, predicted measurements in cartesian coordinates, beware sensor offset for VP
 
-        zpred_r = # TODO, ranges
-        zpred_theta = # TODO, bearings
-        zpred = # TODO, the two arrays above stacked on top of each other vertically like 
+        zpred_r = la.norm(delta_m, axis = 0) # TODO, ranges
+        zpred_theta = np.arctan2(zpredcart[1], zpredcart[0]) # TODO, theta = atan(y/x), ys first argument in fct
+        zpred = np.vstack((zpred_r, zpred_theta))# TODO, the two arrays above stacked on top of each other vertically like 
         # [ranges; 
         #  bearings]
         # into shape (2, #lmrk)
