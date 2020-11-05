@@ -392,11 +392,12 @@ class EKFSLAM:
 
         if numLmk > 0:
             # Prediction and innovation covariance
-            zpred = #TODO
-            H = # TODO
+            zpred = self.h(eta) #TODO
+            H = self.H(eta) # TODO
 
             # Here you can use simply np.kron (a bit slow) to form the big (very big in VP after a while) R,
             # or be smart with indexing and broadcasting (3d indexing into 2d mat) realizing you are adding the same R on all diagonals
+            Rbig = la.block_diag(*[self.R]*numLmk)
             S = # TODO,
             assert (
                 S.shape == zpred.shape * 2
