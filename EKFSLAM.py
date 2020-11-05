@@ -213,18 +213,24 @@ class EKFSLAM:
         numM = m.shape[1]
 
         Rot = rotmat2d(x[2])
+        
+        delta_m = m - x[:2, None]; # TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
+            
 
-        delta_m = # TODO, relative position of landmark to robot in world frame. m - rho that appears in (11.15) and (11.16)
+        sensor_offset_world = Rot @ self.sensor_offset
+        
+        # Assuming this is what we should use instead of m - rho in (11.15) and (11.16) to account for sensor offset 
+        zc = delta_m - sensor_offset_world[:, None] # TODO, (2, #measurements), each measured position in cartesian coordinates like
+                                                    # [x coordinates;
+                                                    #  y coordinates]
 
-        zc = # TODO, (2, #measurements), each measured position in cartesian coordinates like
-        # [x coordinates;
-        #  y coordinates]
-
-        zpred = # TODO (2, #measurements), predicted measurements, like
-        # [ranges;
-        #  bearings]
-        zr = # TODO, ranges
-
+        zpred = self.h(eta).reshape((-1,2)).T # TODO (2, #measurements), predicted measurements, like
+                                                # [ranges;
+                                                #  bearings]
+                                                
+        # Assuming this is ||m^i-rho|| in eq. (11.15) and eq. (11.16)
+        zr = zpred[:][0]  # TODO, ranges 
+        
         Rpihalf = rotmat2d(np.pi / 2)
 
         # In what follows you can be clever and avoid making this for all the landmarks you _know_
@@ -239,12 +245,17 @@ class EKFSLAM:
 
         # proposed way is to go through landmarks one by one
         jac_z_cb = -np.eye(2, 3)  # preallocate and update this for some speed gain if looping
+        jac_z_cb[:,2] = -Rphihalf @ delta_m    # [-I, Rpihalf*(m^i-rho_k)]
+        
         for i in range(numM):  # But this whole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
-
-            # TODO: Set H or Hx and Hm here
-
+            
+             # TODO: Set H or Hx and Hm here
+            Hx[inds][0,:] = (zc[i].T/la.norm(zc[i])) @ jac_z_cb   # d/dx(||z_b(x)||) given in assignment
+            Hx[inds][1,:] = (zc[i].T @ Rpihalf.T)/(la.norm(zc[i])**2) @ jac_z_cb   # d/dx(angle(z_b(x))) given in assignment
+            Hm[inds,inds] = -Hx[inds, 0:2]  # Hm can be defined using the two first columns of Hx and changing sign
+        
         # TODO: You can set some assertions here to make sure that some of the structure in H is correct
         return H
 
