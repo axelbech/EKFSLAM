@@ -409,7 +409,7 @@ class EKFSLAM:
             # Here you can use simply np.kron (a bit slow) to form the big (very big in VP after a while) R,
             # or be smart with indexing and broadcasting (3d indexing into 2d mat) realizing you are adding the same R on all diagonals
             Rbig = la.block_diag(*[self.R]*numLmk)
-            S = # TODO,
+            S = H @ P @ H.T + Rbig # TODO,
             assert (
                 S.shape == zpred.shape * 2
             ), "EKFSLAM.update: wrong shape on either S or zpred"
@@ -420,8 +420,8 @@ class EKFSLAM:
 
             # No association could be made, so skip update
             if za.shape[0] == 0:
-                etaupd = # TODO
-                Pupd = # TODO
+                etaupd = eta # TODO
+                Pupd = P # TODO
                 NIS = 1 # TODO: beware this one when analysing consistency.
 
             else:
@@ -431,16 +431,16 @@ class EKFSLAM:
 
                 # Kalman mean update
                 # S_cho_factors = la.cho_factor(Sa) # Optional, used in places for S^-1, see scipy.linalg.cho_factor and scipy.linalg.cho_solve
-                W = # TODO, Kalman gain, can use S_cho_factors
-                etaupd = # TODO, Kalman update
+                W = P @ Ha.T @ la.inv(Sa) # TODO, Kalman gain, can use S_cho_factors
+                etaupd = eta + W @ v # TODO, Kalman update
 
                 # Kalman cov update: use Joseph form for stability
                 jo = -W @ Ha
                 jo[np.diag_indices(jo.shape[0])] += 1  # same as adding Identity mat
-                Pupd = # TODO, Kalman update. This is the main workload on VP after speedups
+                Pupd = jo @ P @ jo.T + W @ Rbig @ W.T # TODO, Kalman update. This is the main workload on VP after speedups
 
                 # calculate NIS, can use S_cho_factors
-                NIS = # TODO
+                NIS = v.T @ la.inv(Sa) @ v # TODO
 
                 # When tested, remove for speed
                 assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
