@@ -229,7 +229,7 @@ class EKFSLAM:
                                                 #  bearings]
                                                 
         # Assuming this is ||m^i-rho|| in eq. (11.15) and eq. (11.16)
-        zr = zpred[:][0]  # TODO, ranges 
+        zr = la.norm(zc, axis = 0) # zc[:,0]  # TODO, ranges 
         
         Rpihalf = rotmat2d(np.pi / 2)
 
@@ -245,15 +245,15 @@ class EKFSLAM:
 
         # proposed way is to go through landmarks one by one
         jac_z_cb = -np.eye(2, 3)  # preallocate and update this for some speed gain if looping
-        jac_z_cb[:,2] = -Rphihalf @ delta_m    # [-I, Rpihalf*(m^i-rho_k)]
+        jac_z_cb[:,2] = -Rpihalf @ delta_m    # [-I, Rpihalf*(m^i-rho_k)]
         
         for i in range(numM):  # But this whole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
             
              # TODO: Set H or Hx and Hm here
-            Hx[inds][0,:] = (zc[i].T/la.norm(zc[i])) @ jac_z_cb   # d/dx(||z_b(x)||) given in assignment
-            Hx[inds][1,:] = (zc[i].T @ Rpihalf.T)/(la.norm(zc[i])**2) @ jac_z_cb   # d/dx(angle(z_b(x))) given in assignment
+            Hx[inds][0,:] = (zc[i].T/zr[i]) @ jac_z_cb   # d/dx(||z_b(x)||) given in assignment
+            Hx[inds][1,:] = (zc[i].T @ Rpihalf.T)/(zr[i]**2) @ jac_z_cb   # d/dx(angle(z_b(x))) given in assignment
             Hm[inds,inds] = -Hx[inds, 0:2]  # Hm can be defined using the two first columns of Hx and changing sign
         
         # TODO: You can set some assertions here to make sure that some of the structure in H is correct
@@ -409,7 +409,7 @@ class EKFSLAM:
 
             # Here you can use simply np.kron (a bit slow) to form the big (very big in VP after a while) R,
             # or be smart with indexing and broadcasting (3d indexing into 2d mat) realizing you are adding the same R on all diagonals
-            Rbig = la.block_diag(*[self.R]*numLmk) # Faster alternativeto kroeniker prod
+            Rbig = la.block_diag(*[self.R]*numLmk) # Faster alternative to kroeniker prod
             S = H @ P @ H.T + Rbig # TODO,
             assert (
                 S.shape == zpred.shape * 2
