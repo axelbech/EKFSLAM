@@ -437,6 +437,7 @@ class EKFSLAM:
                 etaupd = eta + W @ v # TODO, Kalman update
 
                 # Kalman cov update: use Joseph form for stability
+                Rbig = la.block_diag(*[self.R]*(len(za)//2))
                 jo = -W @ Ha
                 jo[np.diag_indices(jo.shape[0])] += 1  # same as adding Identity mat
                 Pupd = jo @ P @ jo.T + W @ Rbig @ W.T # TODO, Kalman update. This is the main workload on VP after speedups
