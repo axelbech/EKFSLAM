@@ -230,7 +230,7 @@ class EKFSLAM:
                                                 
         # Assuming this is ||m^i-rho|| in eq. (11.15) and eq. (11.16)
         zr = la.norm(zc, axis = 0) # zc[:,0]  # TODO, ranges 
-        
+    
         Rpihalf = rotmat2d(np.pi / 2)
 
         # In what follows you can be clever and avoid making this for all the landmarks you _know_
@@ -245,15 +245,16 @@ class EKFSLAM:
 
         # proposed way is to go through landmarks one by one
         jac_z_cb = -np.eye(2, 3)  # preallocate and update this for some speed gain if looping
-        jac_z_cb[:,2] = -Rpihalf @ delta_m    # [-I, Rpihalf*(m^i-rho_k)]
         
         for i in range(numM):  # But this whole loop can be vectorized
             ind = 2 * i # starting postion of the ith landmark into H
             inds = slice(ind, ind + 2)  # the inds slice for the ith landmark into H
             
+            jac_z_cb[:,2] = -Rpihalf @ delta_m[:,i]    # [-I, Rpihalf*(m^i-rho_k)]
+            
              # TODO: Set H or Hx and Hm here
-            Hx[inds][0,:] = (zc[i].T/zr[i]) @ jac_z_cb   # d/dx(||z_b(x)||) given in assignment
-            Hx[inds][1,:] = (zc[i].T @ Rpihalf.T)/(zr[i]**2) @ jac_z_cb   # d/dx(angle(z_b(x))) given in assignment
+            Hx[inds][0,:] = (zc[:,i].T/zr[i]) @ jac_z_cb   # d/dx(||z_b(x)||) given in assignment
+            Hx[inds][1,:] = (zc[:,i].T @ Rpihalf.T)/(zr[i]**2) @ jac_z_cb   # d/dx(angle(z_b(x))) given in assignment
             Hm[inds,inds] = -Hx[inds, 0:2]  # Hm can be defined using the two first columns of Hx and changing sign
         
         # TODO: You can set some assertions here to make sure that some of the structure in H is correct

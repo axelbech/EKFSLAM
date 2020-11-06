@@ -138,7 +138,7 @@ if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = K
+N = 50#K
 
 print("starting sim (" + str(N) + " iterations)")
 
@@ -164,7 +164,7 @@ for k, z_k in tqdm(enumerate(z[:N])):
         NISnorm[k] = 1
         CInorm[k].fill(1)
 
-    NEESes[k] = slam.NEESes(eta_hat[:3,k], P_hat[:3, k], poseGT[k])# TODO, use provided function slam.NEESes
+    NEESes[k] = slam.NEESes(eta_hat[k][:3], P_hat[k][:3,:3], poseGT[k])# TODO, use provided function slam.NEESes
 
     if doAssoPlot and k > 0:
         axAsso.clear()
