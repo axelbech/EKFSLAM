@@ -97,7 +97,7 @@ M = len(landmarks)
 
 # %% Initilize
 Q = np.diag(np.array([1, 1, 1])**2) # TODO
-R = np.eye(2*M) # TODO
+R = np.eye(2) # TODO
 
 
 doAsso = True

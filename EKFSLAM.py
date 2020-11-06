@@ -309,10 +309,10 @@ class EKFSLAM:
             Rall[inds, inds] = Gz @ self.R @ Gz.T # TODO, Gz * R * Gz^T, transform measurement covariance from polar to cartesian coordinates
 
         assert len(lmnew) % 2 == 0, "SLAM.add_landmark: lmnew not even length"
-        etaadded = np.concatenate(eta, lmnew) # TODO, append new landmarks to state vector
-        Padded = la.block_diag(P, Gx@P[:3,:3]@Gx.T + la.block_diag(Gz@self.R@Gz.T)) # TODO, block diagonal of P_new, see problem text in 1g) in graded assignment 3
-        Padded[n:, :n] = P[:, :3] @ Gx.T# TODO, top right corner of P_new
-        Padded[:n, n:] = Padded[n:, :n].T # TODO, transpose of above. Should yield the same as calcualion, but this enforces symmetry and should be cheaper
+        etaadded = np.concatenate((eta, lmnew)) # TODO, append new landmarks to state vector
+        Padded = la.block_diag(P, Gx@P[:3,:3]@Gx.T + la.block_diag(*[Gz@self.R@Gz.T]*(len(z)//2))) # TODO, block diagonal of P_new, see problem text in 1g) in graded assignment 3
+        Padded[:n, n:] = P[:, :3] @ Gx.T# TODO, top right corner of P_new
+        Padded[n:, :n] = Padded[:n, n:].T # TODO, transpose of above. Should yield the same as calcualion, but this enforces symmetry and should be cheaper
 
         assert (
             etaadded.shape * 2 == Padded.shape
