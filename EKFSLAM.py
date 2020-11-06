@@ -440,7 +440,7 @@ class EKFSLAM:
                 Pupd = jo @ P @ jo.T + W @ Rbig @ W.T # TODO, Kalman update. This is the main workload on VP after speedups
 
                 # calculate NIS, can use S_cho_factors
-                NIS = v.T @ la.inv(Sa) @ v # TODO
+                NIS = (v @ la.solve(Sa, v))/len(za) # v.T @ la.inv(Sa) @ v # TODO
 
                 # When tested, remove for speed
                 assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
