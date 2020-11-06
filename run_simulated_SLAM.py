@@ -143,7 +143,7 @@ N = 50#K
 print("starting sim (" + str(N) + " iterations)")
 
 for k, z_k in tqdm(enumerate(z[:N])):
-
+    print(k)
     eta_hat[k], P_hat[k], NIS[k], a[k] = slam.update(eta_pred[k], P_pred[k], z_k) # TODO update
 
     if k < K - 1:
