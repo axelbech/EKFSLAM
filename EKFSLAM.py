@@ -46,8 +46,8 @@ class EKFSLAM:
         """
         
         xpred = np.array([x[0] + u[0]*np.cos(x[2]) - u[1]*np.sin(x[2]),
-                 x[1] + u[0]*np.sin(x[2]) + u[1]*np.cos(x[2]),
-                 utils.wrapToPi(x[2] + u[2])])# TODO, eq (11.7). Should wrap heading angle between (-pi, pi), see utils.wrapToPi
+                          x[1] + u[0]*np.sin(x[2]) + u[1]*np.cos(x[2]),
+                          utils.wrapToPi(x[2] + u[2])])# TODO, eq (11.7). Should wrap heading angle between (-pi, pi), see utils.wrapToPi
 
         assert xpred.shape == (3,), "EKFSLAM.f: wrong shape for xpred"
         return xpred
@@ -141,6 +141,10 @@ class EKFSLAM:
         P[:3, :3] = Fx @ P[:3, :3] @ Fx.T + Fu @ self.Q @ Fu.T  # TODO robot cov prediction
         P[:3, 3:] = Fx @ P[:3, 3:] # TODO robot-map covariance prediction
         P[3:, :3] = P[:3, 3:].T # TODO map-robot covariance: transpose of the above
+        # P[:3, :3] = Fx @ P[:3, :3] @ Fx.T + self.Q  # TODO robot cov prediction
+        # P[:3, 3:] = Fx @ P[:3, 3:] # TODO robot-map covariance prediction
+        # P[3:, :3] = P[:3, 3:].T # TODO map-robot covariance: transpose of the above
+        
 
         assert np.allclose(P, P.T), "EKFSLAM.predict: not symmetric P"
         assert np.all(
@@ -224,7 +228,7 @@ class EKFSLAM:
                                                     # [x coordinates;
                                                     #  y coordinates]
 
-        zpred = self.h(eta).reshape((-1,2)).T # TODO (2, #measurements), predicted measurements, like
+        #zpred = self.h(eta).reshape((-1,2)).T # TODO (2, #measurements), predicted measurements, like
                                                 # [ranges;
                                                 #  bearings]
                                                 
@@ -298,9 +302,10 @@ class EKFSLAM:
             inds = slice(ind, ind + 2)
             zj = z[inds]
 
-            rot = rotmat2d(zj[1] + eta[2]) # TODO, rotmat in Gz
+            rot = rotmat2d(zj[1] + eta[2]) # TODO, lmnew in add_landmarks  ￼rotmat in Gz
             # Convert measurements (of the new landmarks) from polar to cartesian coordinates and rotate to world frame 
-            lmnew[inds] = rotmat2d(eta[2]) @ np.array([zj[0]*np.cos(zj[1]), zj[0]*np.sin(zj[1])]) + sensor_offset_world # TODO, calculate position of new landmark in world frame
+            #lmnew[inds] = rotmat2d(eta[2]) @ np.array([zj[0]*np.cos(zj[1]), zj[0]*np.sin(zj[1])]) - sensor_offset_world # TODO, calculate position of new landmark in world frame
+            lmnew[inds] = sensor_offset_world + zj[0]*rot[:,0] + eta[0:2]
 
             Gx[inds, :2] = I2 # TODO
             Gx[inds, 2] = zj[0]*np.array([-np.sin(zj[1]+eta[2]), np.cos(zj[1]+eta[2])]) + sensor_offset_world_der # TODO
@@ -441,15 +446,16 @@ class EKFSLAM:
                 jo = -W @ Ha
                 jo[np.diag_indices(jo.shape[0])] += 1  # same as adding Identity mat
                 Pupd = jo @ P @ jo.T + W @ Rbig @ W.T # TODO, Kalman update. This is the main workload on VP after speedups
+                #Pupd = (np.eye(len(P)) - W @ Ha) @ P
 
                 # calculate NIS, can use S_cho_factors
                 NIS = (v @ la.solve(Sa, v)) # v.T @ la.inv(Sa) @ v # TODO
 
                 # When tested, remove for speed
-                assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
-                assert np.all(
-                    np.linalg.eigvals(Pupd) > 0
-                ), "EKFSLAM.update: Pupd not positive definite"
+                #assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
+                #assert np.all(
+                #    np.linalg.eigvals(Pupd) > 0
+                #), "EKFSLAM.update: Pupd not positive definite"
 
         else:  # All measurements are new landmarks,
             a = np.full(z.shape[0], -1)

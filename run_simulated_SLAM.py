@@ -102,8 +102,8 @@ R = 0.05 * np.eye(2) # TODO
 
 doAsso = True
 
-jointAlpha = 0.05
-individualAlpha = 0.05
+jointAlpha = 0.2
+individualAlpha = 0.2
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
 # or by the size of the association search space.
@@ -132,18 +132,17 @@ P_pred[0] = np.zeros((3, 3))  # we also say that we are 100% sure about that
 # %% Set up plotting
 # plotting
 
-doAssoPlot = False
+doAssoPlot = True
 playMovie = True
 if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = 30#K
+N = K
 
 print("starting sim (" + str(N) + " iterations)")
 
 for k, z_k in tqdm(enumerate(z[:N])):
-    print(k)
     eta_hat[k], P_hat[k], NIS[k], a[k] = slam.update(eta_pred[k], P_pred[k], z_k) # TODO update
 
     if k < K - 1:
