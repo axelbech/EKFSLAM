@@ -96,14 +96,14 @@ K = len(z)
 M = len(landmarks)
 
 # %% Initilize
-Q = np.diag(np.array([1, 1, 1])**2) # TODO
-R = 0.05 * np.eye(2) # TODO
+Q = np.diag(np.array([0.4, 0.4, 0.02])**2) # TODO
+R = np.diag(np.array([0.4, 0.01])**2) # (0.04 * np.eye(2))**2 # TODO
 
 
 doAsso = True
 
-jointAlpha = 0.2
-individualAlpha = 0.2
+jointAlpha = 0.0001
+individualAlpha = 0.00001
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
 # or by the size of the association search space.
@@ -227,7 +227,7 @@ ax3.plot(CInorm[:N,0], '--')
 ax3.plot(CInorm[:N,1], '--')
 ax3.plot(NISnorm[:N], lw=0.5)
 
-ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI')
+ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI, ANIS = {(NISnorm[:N].mean()):.2f} with avg. CI = [{(CInorm[:N,0].mean()):.2f}, {(CInorm[:N,1].mean()):.2f}]')
 
 # NEES
 
@@ -241,9 +241,9 @@ for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     ax.plot(np.full(N, CI_NEES[1]), '--')
     ax.plot(NEES[:N], lw=0.5)
     insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
-    ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI')
+    ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI, ANEES = {(NEES.mean()):.2f} with CI = [{(CI_NEES[0]):.2f}, {(CI_NEES[1]):.2f}]')
 
-    CI_ANEES = np.array(chi2.interval(alpha, df*N)) / N
+    CI_ANEES = np.array(chi2.interval(1-alpha, df*N)) / N
     print(f"CI ANEES {tag}: {CI_ANEES}")
     print(f"ANEES {tag}: {NEES.mean()}")
 
