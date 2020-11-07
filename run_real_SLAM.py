@@ -110,9 +110,9 @@ sigmas = np.array([0.4, 0.4, 0.02])
 CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
 Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
 
-R = np.diag([0.4,0.01])
+R = np.diag([0.8, 0.05])**2
 
-JCBBalphas = np.array([0.00001, 0.0000001])
+JCBBalphas = np.array([1e-5, 1e-10])
 sensorOffset = np.array([car.a + car.L, car.b])
 doAsso = True
 
@@ -138,7 +138,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 5000 # K
+N = 3000 # K
 
 doPlot = False
 
@@ -232,8 +232,8 @@ ax3.plot(CInorm[:mk, 0], "--")
 ax3.plot(CInorm[:mk, 1], "--")
 ax3.plot(NISnorm[:mk], lw=0.5)
 
-ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
-
+# ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
+ax3.set_title(f'NIS, {insideCI.mean()*100:.2f}% inside CI, ANIS = {(NISnorm[:mk].mean()):.2f} with avg. CI = [{(CInorm[:mk,0].mean()):.2f}, {(CInorm[:mk,1].mean()):.2f}]')
 # %% slam
 
 if do_raw_prediction:

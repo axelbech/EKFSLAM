@@ -102,8 +102,8 @@ R = np.diag(np.array([0.4, 0.01])**2) # (0.04 * np.eye(2))**2 # TODO
 
 doAsso = True
 
-jointAlpha = 0.0001
-individualAlpha = 0.00001
+jointAlpha = 1e-5
+individualAlpha = 1e-10
 
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
@@ -134,7 +134,7 @@ P_pred[0] = np.zeros((3, 3))  # we also say that we are 100% sure about that
 # plotting
 
 doAssoPlot = False
-playMovie = True
+playMovie = False
 if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
@@ -214,7 +214,7 @@ for l, lmk_l in enumerate(lmk_est_final):
 ax2.plot(*poseGT.T[:2], c="r", label="gt")
 ax2.plot(*pose_est.T[:2], c="g", label="est")
 ax2.plot(*ellipse(pose_est[-1, :2], P_hat[N - 1][:2, :2], 5, 200).T, c="g")
-ax2.set(title="results", xlim=(mins[0], maxs[0]), ylim=(mins[1], maxs[1]))
+ax2.set(title="Estimation results", xlim=(mins[0], maxs[0]), ylim=(mins[1], maxs[1]))
 ax2.axis("equal")
 ax2.grid()
 
@@ -233,7 +233,7 @@ ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI, ANIS = {(NISnorm[:N].mean
 # NEES
 
 fig4, ax4 = plt.subplots(nrows=3, ncols=1, figsize=(7, 5), num=4, clear=True, sharex=True)
-tags = ['all', 'pos', 'heading']
+tags = ['all', 'position', 'heading']
 dfs = [3, 2, 1]
 
 for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
@@ -242,7 +242,7 @@ for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     ax.plot(np.full(N, CI_NEES[1]), '--')
     ax.plot(NEES[:N], lw=0.5)
     insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
-    ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI, ANEES = {(NEES.mean()):.2f} with CI = [{(CI_NEES[0]):.2f}, {(CI_NEES[1]):.2f}]')
+    ax.set_title(f'NEES {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANEES = {(NEES.mean()):.2f} with CI = [{(CI_NEES[0]):.2f}, {(CI_NEES[1]):.2f}]')
 
     CI_ANEES = np.array(chi2.interval(1-alpha, df*N)) / N
     print(f"CI ANEES {tag}: {CI_ANEES}")
@@ -264,7 +264,7 @@ errs = np.vstack((pos_err, heading_err))
 
 for ax, err, tag, ylabel, scaling in zip(ax5, errs, tags[1:], ylabels, scalings):
     ax.plot(err*scaling)
-    ax.set_title(f"{tag}: RMSE {np.sqrt((err**2).mean())*scaling} {ylabel}")
+    ax.set_title(f"{tag} error: RMSE {(np.sqrt((err**2).mean())*scaling):.3f} {ylabel}")
     ax.set_ylabel(f"[{ylabel}]")
     ax.grid()
 
