@@ -388,7 +388,7 @@ class EKFSLAM:
 
     def update(
         self, eta: np.ndarray, P: np.ndarray, z: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, float, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, float, float, float, np.ndarray]:
         """Update eta and P with z, associating landmarks and adding new ones.
 
         Parameters
@@ -430,6 +430,8 @@ class EKFSLAM:
                 etaupd = eta # TODO
                 Pupd = P # TODO
                 NIS = 1 # TODO: beware this one when analysing consistency.
+                NISrange = 1
+                NISbearing = 1
 
             else:
                 # Create the associated innovation
@@ -450,6 +452,12 @@ class EKFSLAM:
 
                 # calculate NIS, can use S_cho_factors
                 NIS = (v @ la.solve(Sa, v)) # v.T @ la.inv(Sa) @ v # TODO
+                
+                #calculate NIS for range and bearing individually
+                innovationRange = v[0::2]
+                innovationBearing = v[1::2]
+                NISrange =  innovationRange @ la.solve(Sa[0,0], innovationRange)
+                NISbearing = innovationBearing @ la.solve(Sa[1,1], innovationBearing)
 
                 # When tested, remove for speed
                 #assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
@@ -461,6 +469,8 @@ class EKFSLAM:
             a = np.full(z.shape[0], -1)
             z = z.flatten()
             NIS = 1 # TODO: beware this one, you can change the value to for instance 1
+            NISrange = 1
+            NISbearing = 1
             etaupd = eta
             Pupd = P
 
@@ -477,7 +487,7 @@ class EKFSLAM:
         assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd must be symmetric"
         assert np.all(np.linalg.eigvals(Pupd) >= 0), "EKFSLAM.update: Pupd must be PSD"
 
-        return etaupd, Pupd, NIS, a
+        return etaupd, Pupd, NIS, NISrange, NISbearing, a
 
     @classmethod
     def NEESes(cls, x: np.ndarray, P: np.ndarray, x_gt: np.ndarray,) -> np.ndarray:
@@ -516,6 +526,7 @@ class EKFSLAM:
         try:
             NEES_heading = d_heading ** 2 / P_heading
         except ZeroDivisionError:
+            print("NEES division by zero")
             NEES_heading = 1.0 # TODO: beware
 
         NEESes = np.array([NEES_all, NEES_pos, NEES_heading])

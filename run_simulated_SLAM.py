@@ -94,16 +94,17 @@ poseGT = simSLAM_ws["poseGT"].T
 
 K = len(z)
 M = len(landmarks)
+simSteps = 200 # Max K=1000
 
 # %% Initilize
-Q = np.diag(np.array([0.4, 0.4, 0.02])**2) # TODO
-R = np.diag(np.array([0.4, 0.01])**2) # (0.04 * np.eye(2))**2 # TODO
+Q = np.diag(np.array([0.1, 0.1, 0.01])**2) # TODO
+R = np.diag(np.array([0.05, 0.005])**2) # (0.04 * np.eye(2))**2 # TODO
 
 
 doAsso = True
 
-jointAlpha = 1e-5
-individualAlpha = 1e-10
+jointAlpha = 1e-5 #1e-5
+individualAlpha = 1e-10#1e-10
 
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
@@ -117,11 +118,17 @@ P_pred: List[Optional[np.ndarray]] = [None] * K
 eta_hat: List[Optional[np.ndarray]] = [None] * K
 P_hat: List[Optional[np.ndarray]] = [None] * K
 a: List[Optional[np.ndarray]] = [None] * K
-NIS = np.zeros(K)
-NISnorm = np.zeros(K)
-CI = np.zeros((K, 2))
-CInorm = np.zeros((K, 2))
-NEESes = np.zeros((K, 3))
+NIS = np.zeros(simSteps)
+NISnorm = np.zeros(simSteps)
+NISrange = np.zeros(simSteps)
+NISbearing = np.zeros(simSteps)
+NISrange_norm = np.zeros(simSteps)
+NISbearing_norm = np.zeros(simSteps)
+CI = np.zeros((simSteps, 2))
+CI_1dim = np.zeros((simSteps, 2))
+CInorm = np.zeros((simSteps, 2))
+CI_1dim_norm = np.zeros((simSteps, 2))
+NEESes = np.zeros((simSteps, 3))
 
 # For consistency testing
 alpha = 0.05
@@ -139,12 +146,12 @@ if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
 # %% Run simulation
-N = K
+N = simSteps
 
 print("starting sim (" + str(N) + " iterations)")
 
 for k, z_k in tqdm(enumerate(z[:N])):
-    eta_hat[k], P_hat[k], NIS[k], a[k] = slam.update(eta_pred[k], P_pred[k], z_k) # TODO update
+    eta_hat[k], P_hat[k], NIS[k], NISrange[k], NISbearing[k], a[k] = slam.update(eta_pred[k], P_pred[k], z_k) # TODO update
 
     if k < K - 1:
         eta_pred[k + 1], P_pred[k + 1] = slam.predict(eta_hat[k], P_hat[k], odometry[k]) # TODO predict
@@ -156,13 +163,20 @@ for k, z_k in tqdm(enumerate(z[:N])):
     num_asso = np.count_nonzero(a[k] > -1)
 
     CI[k] = chi2.interval(1-alpha, 2 * num_asso)
+    CI_1dim[k] = chi2.interval(1-alpha, num_asso)
 
     if num_asso > 0:
         NISnorm[k] = NIS[k] / (2 * num_asso)
+        NISrange_norm[k] = NISrange[k] / num_asso
+        NISbearing_norm[k] = NISbearing[k] / num_asso
         CInorm[k] = CI[k] / (2 * num_asso)
+        CI_1dim_norm[k] = CI_1dim[k] / num_asso
     else:
         NISnorm[k] = 1
         CInorm[k].fill(1)
+        NISrange_norm[k] = 1
+        NISbearing_norm[k] = 1
+        CI_1dim_norm[k].fill(1)
 
     NEESes[k] = slam.NEESes(eta_hat[k][:3], P_hat[k][:3,:3], poseGT[k])# TODO, use provided function slam.NEESes
 
@@ -227,11 +241,23 @@ fig3, ax3 = plt.subplots(num=3, clear=True)
 ax3.plot(CInorm[:N,0], '--')
 ax3.plot(CInorm[:N,1], '--')
 ax3.plot(NISnorm[:N], lw=0.5)
-
 ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI, ANIS = {(NISnorm[:N].mean()):.2f} with avg. CI = [{(CInorm[:N,0].mean()):.2f}, {(CInorm[:N,1].mean()):.2f}]')
 
-# NEES
+insideCI_range = (CI_1dim_norm[:N,0] <= NISrange_norm[:N]) * (NISrange_norm[:N] <= CI_1dim_norm[:N,1])
+fig6, ax6 = plt.subplots(num=6, clear=True)
+ax6.plot(CI_1dim_norm[:N,0], '--')
+ax6.plot(CI_1dim_norm[:N,1], '--')
+ax6.plot(NISrange_norm[:N], lw=0.5)
+ax6.set_title(f'NIS range, {insideCI_range.mean()*100}% inside CI, ANIS = {(NISrange_norm[:N].mean()):.2f} with avg. CI = [{(CI_1dim_norm[:N,0].mean()):.2f}, {(CI_1dim_norm[:N,1].mean()):.2f}]')
 
+insideCI_bearing = (CI_1dim_norm[:N,0] <= NISbearing_norm[:N]) * (NISbearing_norm[:N] <= CI_1dim_norm[:N,1])
+fig7, ax7 = plt.subplots(num=7, clear=True)
+ax7.plot(CI_1dim_norm[:N,0], '--')
+ax7.plot(CI_1dim_norm[:N,1], '--')
+ax7.plot(NISbearing_norm[:N], lw=0.5)
+ax7.set_title(f'NIS bearing, {insideCI_bearing.mean()*100}% inside CI, ANIS = {(NISbearing_norm[:N].mean()):.2f} with avg. CI = [{(CI_1dim_norm[:N,0].mean()):.2f}, {(CI_1dim_norm[:N,1].mean()):.2f}]')    
+
+# NEES
 fig4, ax4 = plt.subplots(nrows=3, ncols=1, figsize=(7, 5), num=4, clear=True, sharex=True)
 tags = ['all', 'position', 'heading']
 dfs = [3, 2, 1]
@@ -249,6 +275,7 @@ for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     print(f"ANEES {tag}: {NEES.mean()}")
 
 fig4.tight_layout()
+
 
 # %% RMSE
 
