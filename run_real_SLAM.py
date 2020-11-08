@@ -14,6 +14,7 @@ except ImportError as e:
 
 
 import numpy as np
+import scipy.linalg as la
 from EKFSLAM import EKFSLAM
 import matplotlib
 import matplotlib.pyplot as plt
@@ -138,7 +139,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 3000 # K
+N = 8000 # K
 
 doPlot = False
 
@@ -234,7 +235,26 @@ ax3.plot(NISnorm[:mk], lw=0.5)
 
 # ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
 ax3.set_title(f'NIS, {insideCI.mean()*100:.2f}% inside CI, ANIS = {(NISnorm[:mk].mean()):.2f} with avg. CI = [{(CInorm[:mk,0].mean()):.2f}, {(CInorm[:mk,1].mean()):.2f}]')
+
+# Split NIS
 # %% slam
+
+fig4, ax4 = plt.subplots(num=4, clear=True)
+
+xupdPosComp = xupd[1:, :2]
+gpsPosFull = np.array([Lo_m[:], La_m[:]]).T
+timeGpsAdjusted = timeGps[timeGps < timeOdo[N-1]]
+timeLsrAdjusted = timeLsr[:mk-1]
+
+estimateGpsDistance = np.full(len(timeLsrAdjusted), None)
+for idx, lsrTimeVal in enumerate(timeLsrAdjusted):
+    timeDiffs = np.abs(timeGpsAdjusted - lsrTimeVal)
+    if timeDiffs.min() < 0.7:
+        gpsIdx = timeDiffs.argmin()
+        estimateGpsDistance[idx] = la.norm(xupdPosComp[idx] - gpsPosFull[gpsIdx])
+
+ax4.plot(timeLsrAdjusted, estimateGpsDistance)
+ax4.set_title("Distance between state estimate and GPS (m)")
 
 if do_raw_prediction:
     fig5, ax5 = plt.subplots(num=5, clear=True)
