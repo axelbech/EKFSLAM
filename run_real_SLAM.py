@@ -233,7 +233,6 @@ ax3.plot(CInorm[:mk, 0], "--")
 ax3.plot(CInorm[:mk, 1], "--")
 ax3.plot(NISnorm[:mk], lw=0.5)
 
-# ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
 ax3.set_title(f'NIS, {insideCI.mean()*100:.2f}% inside CI, ANIS = {(NISnorm[:mk].mean()):.2f} with avg. CI = [{(CInorm[:mk,0].mean()):.2f}, {(CInorm[:mk,1].mean()):.2f}]')
 
 # Split NIS
@@ -275,7 +274,7 @@ fig6, ax6 = plt.subplots(num=6, clear=True)
 ax6.scatter(*eta[3:].reshape(-1, 2).T, color="r", marker="x")
 ax6.plot(*xupd[mk_first:mk, :2].T)
 ax6.set(
-    title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
+    title=f"Steps {N}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
 )
 plt.show()
 

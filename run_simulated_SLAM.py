@@ -98,13 +98,13 @@ simSteps = 200 # Max K=1000
 
 # %% Initilize
 Q = np.diag(np.array([0.1, 0.1, 0.01])**2) # TODO
-R = np.diag(np.array([0.05, 0.005])**2) # (0.04 * np.eye(2))**2 # TODO
+R = np.diag(np.array([0.5, 0.05])**2) # (0.04 * np.eye(2))**2 # TODO
 
 
 doAsso = True
 
-jointAlpha = 1e-5 #1e-5
-individualAlpha = 1e-10#1e-10
+jointAlpha = 1e-7 #1e-5
+individualAlpha = 1e-13#1e-10
 
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
@@ -235,27 +235,21 @@ ax2.grid()
 # %% Consistency
 
 # NIS
-insideCI = (CInorm[:N,0] <= NISnorm[:N]) * (NISnorm[:N] <= CInorm[:N,1])
 
-fig3, ax3 = plt.subplots(num=3, clear=True)
-ax3.plot(CInorm[:N,0], '--')
-ax3.plot(CInorm[:N,1], '--')
-ax3.plot(NISnorm[:N], lw=0.5)
-ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI, ANIS = {(NISnorm[:N].mean()):.2f} with avg. CI = [{(CInorm[:N,0].mean()):.2f}, {(CInorm[:N,1].mean()):.2f}]')
+fig3, ax3 = plt.subplots(nrows=3, ncols=1, figsize=(7, 5), num=3, clear=True, sharex=True)
+tags = ['all', 'range', 'bearing']
+dfs = [2, 1, 1]
+NISes = [NISnorm, NISrange_norm, NISbearing_norm]
+CIs = [CInorm, CI_1dim_norm, CI_1dim_norm]
+for ax, tag, NIS, CI_NIS, df in zip(ax3, tags, NISes, CIs, dfs):
+    ax.plot(CI_NIS[:N,0], '--')
+    ax.plot(CI_NIS[:N,1], '--')
+    ax.plot(NIS[:N], lw=0.5)
+    insideCI = (CI_NIS[:N,0] <= NIS[:N]) * (NIS[:N] <= CI_NIS[:N,1])
+    ax.set_title(f'NIS {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANIS = {(NIS.mean()):.2f} with CI = [{(CI_NIS[0].mean()):.2f}, {(CI_NIS[1].mean()):.2f}]')
 
-insideCI_range = (CI_1dim_norm[:N,0] <= NISrange_norm[:N]) * (NISrange_norm[:N] <= CI_1dim_norm[:N,1])
-fig6, ax6 = plt.subplots(num=6, clear=True)
-ax6.plot(CI_1dim_norm[:N,0], '--')
-ax6.plot(CI_1dim_norm[:N,1], '--')
-ax6.plot(NISrange_norm[:N], lw=0.5)
-ax6.set_title(f'NIS range, {insideCI_range.mean()*100}% inside CI, ANIS = {(NISrange_norm[:N].mean()):.2f} with avg. CI = [{(CI_1dim_norm[:N,0].mean()):.2f}, {(CI_1dim_norm[:N,1].mean()):.2f}]')
+fig3.tight_layout()
 
-insideCI_bearing = (CI_1dim_norm[:N,0] <= NISbearing_norm[:N]) * (NISbearing_norm[:N] <= CI_1dim_norm[:N,1])
-fig7, ax7 = plt.subplots(num=7, clear=True)
-ax7.plot(CI_1dim_norm[:N,0], '--')
-ax7.plot(CI_1dim_norm[:N,1], '--')
-ax7.plot(NISbearing_norm[:N], lw=0.5)
-ax7.set_title(f'NIS bearing, {insideCI_bearing.mean()*100}% inside CI, ANIS = {(NISbearing_norm[:N].mean()):.2f} with avg. CI = [{(CI_1dim_norm[:N,0].mean()):.2f}, {(CI_1dim_norm[:N,1].mean()):.2f}]')    
 
 # NEES
 fig4, ax4 = plt.subplots(nrows=3, ncols=1, figsize=(7, 5), num=4, clear=True, sharex=True)
