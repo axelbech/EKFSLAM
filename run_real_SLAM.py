@@ -127,8 +127,14 @@ xupd = np.zeros((mK, 3))
 a = [None] * mK
 NIS = np.zeros(mK)
 NISnorm = np.zeros(mK)
+NISrange = np.zeros(mK)
+NISbearing = np.zeros(mK)
+NISrange_norm = np.zeros(mK)
+NISbearing_norm = np.zeros(mK)
 CI = np.zeros((mK, 2))
 CInorm = np.zeros((mK, 2))
+CI_1dim = np.zeros((mK, 2))
+CI_1dim_norm = np.zeros((mK, 2))
 
 # Initialize state
 eta = np.array([Lo_m[0], La_m[1], 36 * np.pi / 180]) # you might want to tweak these for a good reference
@@ -139,7 +145,7 @@ mk = mk_first
 t = timeOdo[0]
 
 # %%  run
-N = 8000 # K
+N = 3000 # K
 
 doPlot = False
 
@@ -178,18 +184,25 @@ for k in tqdm(range(N)):
         eta, P = slam.predict(eta, P, odo) # TODO predict
 
         z = detectTrees(LASER[mk])
-        eta, P, NIS[mk], a[mk] = slam.update(eta, P, z)# TODO update
+        eta, P, NIS[mk], NISrange[k], NISbearing[k], a[mk] = slam.update(eta, P, z)# TODO update
 
         num_asso = np.count_nonzero(a[mk] > -1)
+        
+        CI[mk] = chi2.interval(1-alpha, 2 * num_asso)
+        CI_1dim[mk] = chi2.interval(1-alpha, num_asso)
 
         if num_asso > 0:
             NISnorm[mk] = NIS[mk] / (2 * num_asso)
-            CInorm[mk] = np.array(chi2.interval(confidence_prob, 2 * num_asso)) / (
-                2 * num_asso
-            )
+            NISrange_norm[mk] = NISrange[mk] / num_asso
+            NISbearing_norm[mk] = NISbearing[mk] / num_asso
+            CInorm[mk] = CI[mk] / ( 2 * num_asso)
+            CI_1dim_norm[mk] = CI_1dim[mk] / num_asso
         else:
             NISnorm[mk] = 1
             CInorm[mk].fill(1)
+            NISrange_norm[mk] = 1
+            NISbearing_norm[mk] = 1
+            CI_1dim_norm[mk].fill(1)
 
         xupd[mk] = eta[:3]
 
@@ -226,14 +239,29 @@ for k in tqdm(range(N)):
 # %% Consistency
 
 # NIS
-insideCI = (CInorm[:mk, 0] <= NISnorm[:mk]) * (NISnorm[:mk] <= CInorm[:mk, 1])
+# insideCI = (CInorm[:mk, 0] <= NISnorm[:mk]) * (NISnorm[:mk] <= CInorm[:mk, 1])
 
-fig3, ax3 = plt.subplots(num=3, clear=True)
-ax3.plot(CInorm[:mk, 0], "--")
-ax3.plot(CInorm[:mk, 1], "--")
-ax3.plot(NISnorm[:mk], lw=0.5)
+# fig3, ax3 = plt.subplots(num=3, clear=True)
+# ax3.plot(CInorm[:mk, 0], "--")
+# ax3.plot(CInorm[:mk, 1], "--")
+# ax3.plot(NISnorm[:mk], lw=0.5)
 
-ax3.set_title(f'NIS, {insideCI.mean()*100:.2f}% inside CI, ANIS = {(NISnorm[:mk].mean()):.2f} with avg. CI = [{(CInorm[:mk,0].mean()):.2f}, {(CInorm[:mk,1].mean()):.2f}]')
+# ax3.set_title(f'NIS, {insideCI.mean()*100:.2f}% inside CI, ANIS = {(NISnorm[:mk].mean()):.2f} with avg. CI = [{(CInorm[:mk,0].mean()):.2f}, {(CInorm[:mk,1].mean()):.2f}]')
+
+fig3, ax3 = plt.subplots(nrows=3, ncols=1, figsize=(7, 5), num=3, clear=True, sharex=True)
+tags = ['all', 'range', 'bearing']
+dfs = [2, 1, 1]
+NISes = [NISnorm, NISrange_norm, NISbearing_norm]
+CIs = [CInorm, CI_1dim_norm, CI_1dim_norm]
+for ax, tag, NIS, CI_NIS, df in zip(ax3, tags, NISes, CIs, dfs):
+    ax.plot(CI_NIS[:mk,0], '--')
+    ax.plot(CI_NIS[:mk,1], '--')
+    ax.plot(NIS[:mk], lw=0.5)
+    insideCI = (CI_NIS[:mk,0] <= NIS[:mk]) * (NIS[:mk] <= CI_NIS[:mk,1])
+    ax.set_title(f'NIS {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANIS = {(NIS.mean()):.2f} with CI = [{(CI_NIS[0].mean()):.2f}, {(CI_NIS[1].mean()):.2f}]')
+
+fig3.tight_layout()
+
 
 # Split NIS
 # %% slam
