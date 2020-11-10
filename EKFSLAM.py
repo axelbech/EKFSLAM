@@ -456,8 +456,8 @@ class EKFSLAM:
                 #calculate NIS for range and bearing individually
                 innovationRange = v[0::2]
                 innovationBearing = v[1::2]
-                NISrange =  innovationRange @ la.solve(Sa[0,0], innovationRange)
-                NISbearing = innovationBearing @ la.solve(Sa[1,1], innovationBearing)
+                NISrange =  innovationRange @ la.solve(Sa[0::2,0::2], innovationRange)
+                NISbearing = innovationBearing @ la.solve(Sa[1::2,1::2], innovationBearing)
 
                 # When tested, remove for speed
                 #assert np.allclose(Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
