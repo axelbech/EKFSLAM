@@ -97,7 +97,6 @@ M = len(landmarks)
 simSteps = 1000 # Max K=1000
 
 # %% Initilize
-
 Q = np.diag(np.array([0.2, 0.2, 0.01])**2) # TODO
 R = np.diag(np.array([0.1, 0.02])**2) # (0.04 * np.eye(2))**2 # TODO
 
@@ -142,7 +141,8 @@ P_pred[0] = np.zeros((3, 3))  # we also say that we are 100% sure about that
 # plotting
 
 doAssoPlot = False
-playMovie = True
+playMovie = False
+
 if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
