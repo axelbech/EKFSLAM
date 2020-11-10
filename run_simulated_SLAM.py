@@ -94,17 +94,17 @@ poseGT = simSLAM_ws["poseGT"].T
 
 K = len(z)
 M = len(landmarks)
-simSteps = 200 # Max K=1000
+simSteps = K # Max K=1000
 
 # %% Initilize
-Q = np.diag(np.array([0.1, 0.1, 0.01])**2) # TODO
-R = np.diag(np.array([0.5, 0.05])**2) # (0.04 * np.eye(2))**2 # TODO
+Q = np.diag(np.array([0.2, 0.2, 0.01])**2) # TODO
+R = np.diag(np.array([0.1, 0.02])**2) # (0.04 * np.eye(2))**2 # TODO
 
 
 doAsso = True
 
-jointAlpha = 1e-7 #1e-5
-individualAlpha = 1e-13#1e-10
+jointAlpha = 1e-6 #1e-5
+individualAlpha = 1e-10#1e-10
 
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
@@ -140,8 +140,8 @@ P_pred[0] = np.zeros((3, 3))  # we also say that we are 100% sure about that
 # %% Set up plotting
 # plotting
 
-doAssoPlot = False
-playMovie = False
+doAssoPlot = True
+playMovie = True
 if doAssoPlot:
     figAsso, axAsso = plt.subplots(num=1, clear=True)
 
