@@ -97,7 +97,6 @@ M = len(landmarks)
 simSteps = K # Max K=1000
 
 # %% Initilize
-<<<<<<< HEAD
 Q = np.diag(np.array([0.3, 0.3, 0.01])**2) # TODO
 R = np.diag(np.array([0.04, 0.025])**2) # (0.04 * np.eye(2))**2 # TODO
 
