@@ -97,14 +97,30 @@ M = len(landmarks)
 simSteps = K # Max K=1000
 
 # %% Initilize
+<<<<<<< HEAD
 Q = np.diag(np.array([0.2, 0.2, 0.01])**2) # TODO
 R = np.diag(np.array([0.1, 0.02])**2) # (0.04 * np.eye(2))**2 # TODO
+=======
+Q = np.diag(np.array([0.3, 0.3, 0.01])**2) # TODO
+R = np.diag(np.array([0.04, 0.025])**2) # (0.04 * np.eye(2))**2 # TODO
+
+#Q = np.diag(np.array([0.1, 0.1, 0.01])**2) # TODO
+#R = np.diag(np.array([0.5, 0.05])**2) # (0.04 * np.eye(2))**2 # TODO
+>>>>>>> 885738371db5d73c73c16edca506745a96b5261d
 
 
 doAsso = True
 
+<<<<<<< HEAD
 jointAlpha = 1e-6 #1e-5
 individualAlpha = 1e-10#1e-10
+=======
+#jointAlpha = 1e-15 #1e-5
+#individualAlpha = 1e-20#1e-10
+
+jointAlpha = 1e-7 #1e-5
+individualAlpha = 1e-13#1e-10
+>>>>>>> 885738371db5d73c73c16edca506745a96b5261d
 
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
