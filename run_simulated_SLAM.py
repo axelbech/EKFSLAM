@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from scipy.io import loadmat
 import numpy as np
+import scipy.linalg as la
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -97,7 +98,7 @@ M = len(landmarks)
 simSteps = 1000 # Max K=1000
 
 # %% Initilize
-Q = np.diag(np.array([0.2, 0.2, 0.01])**2) # TODO
+Q = np.diag((np.array([0.2, 0.2, 0.01]))**2) # TODO
 R = np.diag(np.array([0.1, 0.02])**2) # (0.04 * np.eye(2))**2 # TODO
 
 
@@ -290,6 +291,26 @@ for ax, err, tag, ylabel, scaling in zip(ax5, errs, tags[1:], ylabels, scalings)
     ax.grid()
 
 fig5.tight_layout()
+
+# %% Map and total eta NEES
+mapEtaNEES = np.zeros(N)
+mapEtaNEESavg = np.zeros(N)
+for stepIdx, currentLmkEst in enumerate(lmk_est):
+    closestLandmarkIndices = []
+    for idx, est in enumerate(currentLmkEst):
+        closestLandmarkIndices.append( (la.norm(est-landmarks, axis = 1)).argmin() ) # Index of the closest landmark to estimate
+        
+    mapPosErr = (currentLmkEst - landmarks[closestLandmarkIndices]).ravel()
+    mapEtaNEES[stepIdx] = mapPosErr @ la.solve(P_hat[stepIdx][3:,3:], mapPosErr)
+    if (len(closestLandmarkIndices) != 0):
+        mapEtaNEESavg[stepIdx] = mapEtaNEES[stepIdx] / len(closestLandmarkIndices)
+        
+fig6, ax6 = plt.subplots(num=6, clear=True)
+ax6.plot(mapEtaNEESavg)
+ax6.set_title('Map estimate NEES (averaged over landmarks)')
+ax6.set_xlabel('Time step')
+plt.yscale('log')
+        
 
 # %% Movie time
 
