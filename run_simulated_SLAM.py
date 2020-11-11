@@ -109,7 +109,7 @@ individualAlpha = 1e-10#1e-10
 
 JCBBalphas = np.array([jointAlpha, individualAlpha]) # TODO # first is for joint compatibility, second is individual
 # these can have a large effect on runtime either through the number of landmarks created
-# or by the size of the association search space.
+# or by the size of the association search space.https://github.com/axelbech/EKFSLAM
 
 slam = EKFSLAM(Q, R, do_asso=doAsso, alphas=JCBBalphas)
 
@@ -207,6 +207,7 @@ lmk_est_final = lmk_est[N - 1]
 np.set_printoptions(precision=4, linewidth=100)
 
 # %% Plotting of results
+
 mins = np.amin(landmarks, axis=0)
 maxs = np.amax(landmarks, axis=0)
 
@@ -244,11 +245,11 @@ dfs = [2, 1, 1]
 NISes = [NISnorm, NISrange_norm, NISbearing_norm]
 CIs = [CInorm, CI_1dim_norm, CI_1dim_norm]
 for ax, tag, NIS, CI_NIS, df in zip(ax3, tags, NISes, CIs, dfs):
-    ax.plot(CI_NIS[:N,0], '--')
-    ax.plot(CI_NIS[:N,1], '--')
+    ax.plot(np.full(N, CI_NIS[:N,0]), '--')
+    ax.plot(np.full(N, CI_NIS[:N,1]), '--')
     ax.plot(NIS[:N], lw=0.5)
     insideCI = (CI_NIS[:N,0] <= NIS[:N]) * (NIS[:N] <= CI_NIS[:N,1])
-    ax.set_title(f'NIS {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANIS = {(NIS.mean()):.2f} with CI = [{(CI_NIS[0].mean()):.2f}, {(CI_NIS[1].mean()):.2f}]')
+    ax.set_title(f'NIS {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANIS = {(NIS.mean()):.2f} with mean CI = [{(CI_NIS[:,0].mean()):.2f}, {(CI_NIS[:,1].mean()):.2f}]')
 
 fig3.tight_layout()
 
@@ -260,9 +261,9 @@ dfs = [3, 2, 1]
 
 for ax, tag, NEES, df in zip(ax4, tags, NEESes.T, dfs):
     CI_NEES = chi2.interval(1-alpha, df)
-    ax.plot(np.full(N, CI_NEES[0]), '--')
-    ax.plot(np.full(N, CI_NEES[1]), '--')
-    ax.plot(NEES[:N], lw=0.5)
+    ax.plot(np.full(N-1, CI_NEES[0]), '--')
+    ax.plot(np.full(N-1, CI_NEES[1]), '--')
+    ax.plot(NEES[:N-1], lw=0.5)
     insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
     ax.set_title(f'NEES {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANEES = {(NEES.mean()):.2f} with CI = [{(CI_NEES[0]):.2f}, {(CI_NEES[1]):.2f}]')
 

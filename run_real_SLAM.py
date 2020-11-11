@@ -258,7 +258,7 @@ for ax, tag, NIS, CI_NIS, df in zip(ax3, tags, NISes, CIs, dfs):
     ax.plot(CI_NIS[:mk,1], '--')
     ax.plot(NIS[:mk], lw=0.5)
     insideCI = (CI_NIS[:mk,0] <= NIS[:mk]) * (NIS[:mk] <= CI_NIS[:mk,1])
-    ax.set_title(f'NIS {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANIS = {(NIS.mean()):.2f} with CI = [{(CI_NIS[0].mean()):.2f}, {(CI_NIS[1].mean()):.2f}]')
+    ax.set_title(f'NIS {tag}: {(insideCI.mean()*100):.2f}% inside CI, ANIS = {(NIS.mean()):.2f} with mean CI = [{(CI_NIS[:mk,0].mean()):.2f}, {(CI_NIS[:mk,1].mean()):.2f}]')
 
 fig3.tight_layout()
 
